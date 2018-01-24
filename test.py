@@ -38,14 +38,14 @@ r = pd.concat([r2,r1],axis = 1)
 r.columns = list(rfmdata.columns)+[u'类别数目']
 print(r)
 
-q = pd.concat([rfmdata,pd.Series(model.labels_,index=rfmdata.index)], axis = 1)
+q = pd.concat([rfmdata,pd.Series(model.labels_,index=rfmdata.index)], axis = 1)  #若数据集只有一个元素时，会报错
 q.columns = list(rfmdata.columns) +[u'聚类类别']
 q.to_excel('outputfile.xlsx') #保存结
 
 def density_plot(data): #自定义作图函数
     plt.rcParams['font.sans-serif'] = ['SimHei'] #用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
-    p = rfmdata.plot(kind='kde', linewidth = 2, subplots = True, sharex = False)
+    p = data.plot(kind='kde', linewidth = 2, subplots = True, sharex = False)
     [p[i].set_ylabel(u'密度') for i in range(k)]
     plt.legend()
     return plt
