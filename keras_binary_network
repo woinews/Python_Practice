@@ -1,0 +1,42 @@
+#-*- coding: utf-8 -*-
+import pandas as pd
+import numpy as np
+
+inputfile = r'...\sales_data.xls'
+data = pd.read_excel(inputfile, index_col = u'序号') 
+
+data[data == u'好'] = 1
+data[data == u'是'] = 1
+data[data == u'高'] = 1
+data[data != 1] = 0
+data = data.astype(int)
+x = data.iloc[:,:3].as_matrix()
+y = data.iloc[:,3].as_matrix()
+
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation
+
+model = Sequential() 
+model.add(Dense(input_dim = 3, units = 10))#3个输入节点，10个隐藏节点
+model.add(Activation('relu'))   #使用 relu 激活函数可以达到更好的性能
+model.add(Dense(input_dim = 10, units = 1)) 
+model.add(Activation('sigmoid'))  #在输出层使用 Sigmoid 函数来确保网络输出在 0 和 1 之间
+
+model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics=['accuracy'])
+#二分类问题损失函数为binary_crossentropy
+#adam是梯度下降算法，一种默认的高效算法
+#使用metrics=['accuracy']来输出准确率
+
+model.fit(x, y, nb_epoch = 1000, batch_size = 10) 
+#可以不断调整训练次数及每次训练的样本数来使模型达到最优
+
+predictions = model.predict(x) #对数据进行预测，将训练模型运用于数据集x
+data['预测值'] = [int(np.round(x)) for x in predictions]
+
+yp = model.predict_classes(x).reshape(len(y)) 
+
+from cm_plot import * 
+cm_plot(y,yp).show() 
+
+scores = model.evaluate(x, y)
+print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100)) #计算模型准确率
