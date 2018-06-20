@@ -1,7 +1,5 @@
 #-*- coding: utf-8 -*-
 #Python数据分析与挖掘实战 第五章 使用随机逻辑回归筛选特征值
-
-
 import pandas as pd
 
 filename = r'D:\DataAnalysis\Python_practice\chapter5\demo\data\bankloan.xls'
@@ -23,9 +21,9 @@ rlr.get_support() # 获取特征筛选结果，也可以通过 .scores_方法获
 filter_columns = data.columns[0:8][rlr.get_support()] #选取特征字段数据
 print(u'---------start-----------')
 print(u'有效特征为: %s' % ','.join(filter_columns))
+
 x = data[filter_columns]#.as_matrix(columns=None)
 lr = LR()  # 建立逻辑回归模型 
-
 lr.fit(x, y)  # 用筛选后的特征数据来训练模型
 
 print(u'---------end-----------')
