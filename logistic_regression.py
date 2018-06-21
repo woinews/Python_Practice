@@ -26,6 +26,10 @@ x = data[filter_columns]#.as_matrix(columns=None)
 lr = LR()  # 建立逻辑回归模型 
 lr.fit(x, y)  # 用筛选后的特征数据来训练模型
 
+predictions = lr.predict(x) #对数据进行预测，将训练模型运用于数据集x
+data['预测值'] = [int(np.round(x)) for x in predictions]
+
+
 print(u'---------end-----------')
 print(u'模型的平均正确率为%s' % lr.score(x, y)) 
 
