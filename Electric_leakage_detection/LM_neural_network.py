@@ -59,14 +59,17 @@ print("训练样本准确率：%s: %.2f%%" % (net.metrics_names[1], scores[1]*10
 
 from sklearn.metrics import roc_curve #导入ROC曲线函数
 
-predict_result = net.predict(x_test).reshape(len(y_test))
+predict_result_test = net.predict(x_test).reshape(len(y_test))
+predictions_test = net.predict(x_test) #对数据进行预测，将训练模型运用于数据集x
+test['预测值'] = [int(np.round(i)) for i in predictions_test]
+cm_plot(y_test, test['预测值']).show() #显示混淆矩阵可视化结果
 scores_test = net.evaluate(x_test, y_test)
 print("测试样本准确率：%s: %.2f%%" % (net.metrics_names[1], scores_test[1]*100)) #计算模型准确率
 
-fpr, tpr, thresholds = roc_curve(y_test, predict_result, pos_label=1)
+fpr, tpr, thresholds = roc_curve(y_test, predict_result_test, pos_label=1)
 plt.plot(fpr, tpr, linewidth=2, label = 'ROC of LM') #作出ROC曲线
-plt.xlabel('False Positive Rate') #坐标轴标签
-plt.ylabel('True Positive Rate') #坐标轴标签
+plt.xlabel('False Positive Rate') ##误检率是相对于虚假目标的总量里有多少被误识为真实目标
+plt.ylabel('True Positive Rate') #查准率是指检测到的目标里，真实目标所占的比例
 plt.ylim(0,1.05) #边界范围
 plt.xlim(0,1.05) #边界范围
 plt.legend(loc=4) #图例
