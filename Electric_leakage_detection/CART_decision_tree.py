@@ -1,7 +1,7 @@
 ﻿#-*- coding: utf-8 -*-
 #构建并测试CART决策树模型
 
-import pandas as pd 
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -22,12 +22,11 @@ y_test = test.iloc[:,3].as_matrix()
 
 #构建CART决策树模型
 from sklearn.tree import DecisionTreeClassifier #导入决策树模型
-#from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score  #用于输出模型准确率
 
 treefile = 'tree.pkl' #模型输出名字
 tree = DecisionTreeClassifier() #建立决策树模型,模型参数https://www.cnblogs.com/pinard/p/6056319.html
-#scores = cross_val_score(tree,x,y)
-#print("决策树准确率: ",scores.max())
+
 tree.fit(x, y) #训练
 
 #保存模型
@@ -54,15 +53,30 @@ train['预测值'] = [int(np.round(x)) for x in predictions]
 
 cm_plot(y, tree.predict(x)).show() #cm_plot(y,y_predict)显示混淆矩阵可视化结果
 #注意到Scikit-Learn使用predict方法直接给出预测结果
+#模型的准确率
+score = accuracy_score(y,predictions)
+print("决策树模型准确率: %.2f%%" % (score*100))
+
+
+#用模型预测测试样本的结果
+predictions_test = tree.predict(x_test)
+test['预测值'] = [int(np.round(x)) for x in predictions_test]
+
+cm_plot(y_test, tree.predict(x_test)).show() #cm_plot(y,y_predict)显示混淆矩阵可视化结果
+#模型预测测试样本的准确率
+score_test = accuracy_score(y_test,predictions_test)
+print("决策树模型预测测试样本的准确率: %.2f%%" % (score_test*100))
 
 from sklearn.metrics import roc_curve #导入ROC曲线函数
-
+#ROC详解https://blog.csdn.net/ice110956/article/details/20288239
 fpr, tpr, thresholds = roc_curve(y_test, tree.predict_proba(x_test)[:,1], pos_label=1)
 plt.plot(fpr, tpr, linewidth=2, label = 'ROC of CART', color = 'green') #作出ROC曲线
-plt.xlabel('False Positive Rate') #坐标轴标签
-plt.ylabel('True Positive Rate') #坐标轴标签
+plt.xlabel('False Positive Rate') #误检率是相对于虚假目标的总量里有多少被误识为真实目标
+plt.ylabel('True Positive Rate') #查准率是指检测到的目标里，真实目标所占的比例
 plt.ylim(0,1.05) #边界范围
 plt.xlim(0,1.05) #边界范围
 plt.legend(loc=4) #图例
 plt.show() #显示作图结果
+
+
 
