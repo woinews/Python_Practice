@@ -12,7 +12,7 @@
 
 ## 三、聚类结果解读 
   * 聚类结果：  
-  ![image](https://github.com/woinews/Python_Practice/blob/master/Customer_cluster/cluster_result/cluster_result.png)  
+  ![image](https://github.com/woinews/Python_Practice/blob/master/Customer_cluster/cluster_result/cluster_result_list.png)  
     *  第0类客户群体，其分布概率图如下：  
         ![image](https://github.com/woinews/Python_Practice/blob/master/Customer_cluster/cluster_result/cluster_result_0.png)  
     *  第1类客户群体，其分布概率图如下：  
