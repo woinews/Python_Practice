@@ -93,7 +93,7 @@ print('-------------------进行聚类分析---------------')
 from sklearn.cluster import KMeans #导入K均值聚类算法
 k = 5  #需要进行的聚类类别数
 #调用k-means算法，进行聚类分析
-model = KMeans(n_clusters = k, n_jobs = 4) #n_jobs是并行数，一般等于CPU数较好
+model = KMeans(n_clusters = k, max_iter=300, n_jobs = 1) #max_iter是对于单次初始值计算的最大迭代次数，n_jobs是并行数
 model.fit(data_zscore) #训练模型
 
 r1 = pd.Series(model.labels_).value_counts()
@@ -129,22 +129,23 @@ tsne = TSNE()
 tsne.fit_transform(data_zscore) #进行数据降维
 tsne = pd.DataFrame(tsne.embedding_, index = data_zscore.index) #转换数据格式
 
-plt.rcParams['font.sans-serif'] = ['SimHei'] #用来正常显示中文标签
-plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
+tsne = TSNE(n_components=2, learning_rate=100, init='pca', random_state=0)
+tsne_data = tsne.fit_transform(data_zscore) #进行数据降维
+tsne = pd.DataFrame(tsne_data, index = data_zscore.index) #转换数据格式
+plt.figure()
+for i in range(k):
+    d = tsne[cluster_result[u'聚类类别'] == i]
+    plt.plot(d[0], d[1], '.')
+    
+#使用PCA进行数据降维并可视化
+from sklearn.decomposition import PCA
 
-#不同类别用不同颜色和样式绘图
-d = tsne[r[u'聚类类别'] == 0]
-plt.plot(d[0], d[1], 'r.')
-d = tsne[r[u'聚类类别'] == 1]
-plt.plot(d[0], d[1], 'go')
-d = tsne[r[u'聚类类别'] == 2]
-plt.plot(d[0], d[1], 'b*')
-d = tsne[r[u'聚类类别'] == 3]
-plt.plot(d[0], d[1], 'b*')
-d = tsne[r[u'聚类类别'] == 4]
-plt.plot(d[0], d[1], 'b*')
-plt.show()
-
+pca = PCA()
+data = pca.fit_transform(data_zscore)
+data = pd.DataFrame(data,index=data_zscore.index)
+for i in range(k):
+    d = data[cluster_result[u'聚类类别'] == i]
+    plt.plot(d[0], d[1], '.')
 
 
 
