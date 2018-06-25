@@ -5,7 +5,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-data = pd.read_csv(r'C:\Users\inews\Documents\GitHub\Python_Practice\Customer_cluster\data\air_data.csv', encoding = 'utf-8') 
+plt.rcParams['font.sans-serif'] = ['SimHei'] #用来正常显示中文标签
+plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
+
+data = pd.read_csv(r'D:\datasheet\Customer_cluster\data\air_data.csv', encoding = 'utf-8') 
 
 explore = data.describe(percentiles = [], include = 'all').T #包括对数据的基本描述，percentiles参数是指定计算多少的分位数表（如1/4分位数、中位数等）；T是转置，转置后更方便查阅
 explore['null'] = data.isnull().sum()
@@ -83,6 +86,8 @@ print("data_convert_explore") #观察数据转换之后各属性的取值情况
 
 #数据标准化：因为5个指标的取值范围差异较大，需要进行数据标准化，消除量级的影响
 
+data_convert.L = data_convert.L.dt.days.astype(int)
+
 data_zscore = (data_convert - data_convert.mean(axis = 0))/(data_convert.std(axis = 0))
 data_zscore.columns = ['Z' +i for i in data_zscore.columns]
 
@@ -93,7 +98,7 @@ print('-------------------进行聚类分析---------------')
 from sklearn.cluster import KMeans #导入K均值聚类算法
 k = 5  #需要进行的聚类类别数
 #调用k-means算法，进行聚类分析
-model = KMeans(n_clusters = k, max_iter=300, n_jobs = 1) #max_iter是对于单次初始值计算的最大迭代次数，n_jobs是并行数
+model = KMeans(n_clusters = k, init='k-means++', max_iter=300, n_jobs = 1) #n_jobs是并行数，一般等于CPU数较好
 model.fit(data_zscore) #训练模型
 
 r1 = pd.Series(model.labels_).value_counts()
@@ -105,29 +110,28 @@ print('聚类分群结果：\n', r)
 cluster_result = pd.concat([data_zscore,pd.Series(model.labels_,index=data_zscore.index)], axis = 1)  #若数据集只有一个元素时，会报错
 cluster_result.columns = list(data_zscore.columns) +[u'聚类类别']
 cluster_result.to_excel('cluster_result.xlsx') #保存结果
+#data_cleaning['聚类类别'] = cluster_result.聚类类别  #详细数据
+#data_convert['聚类类别'] = cluster_result.聚类类别   #未标准化前的聚类数据
+#data_convert.to_excel('result_data.xlsx')
 
-#绘制概率密度图
+#绘制概率密度图（绘制原始数据的概率分布图，更方便观察）
 def density_plot(data): #自定义作图函数
-    plt.rcParams['font.sans-serif'] = ['SimHei'] #用来正常显示中文标签
-    plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
-    p = data.plot(kind='kde', linewidth = 2, subplots = True, sharex = False)
+    p = data.plot(kind='kde', linewidth = 2, subplots = True, sharex = False, figsize = (8,8) )
     [p[i].set_ylabel(u'密度') for i in range(k)]
     plt.legend()
+    plt.show()
     return plt
 
 pic_output = 'cluster_result' #概率密度图文件名前缀
 for i in range(k):
-    density_plot(data_zscore[cluster_result[u'聚类类别']==i]).savefig(u'%s%s.png' %(pic_output, i))
+    density_plot(data_convert.loc[:,'L':'C'][cluster_result[u'聚类类别']==i]).savefig(u'%s%s.png' %(pic_output, i))
+
 
 #客户价值分析：结合业务对各聚类群体进行定义
 
 #模型评价，使用TSNE进行数据降维，查看聚类结果分布情况
 
 from sklearn.manifold import TSNE
-
-tsne = TSNE()
-tsne.fit_transform(data_zscore) #进行数据降维
-tsne = pd.DataFrame(tsne.embedding_, index = data_zscore.index) #转换数据格式
 
 tsne = TSNE(n_components=2, learning_rate=100, init='pca', random_state=0)
 tsne_data = tsne.fit_transform(data_zscore) #进行数据降维
@@ -136,7 +140,7 @@ plt.figure()
 for i in range(k):
     d = tsne[cluster_result[u'聚类类别'] == i]
     plt.plot(d[0], d[1], '.')
-    
+
 #使用PCA进行数据降维并可视化
 from sklearn.decomposition import PCA
 
@@ -146,10 +150,5 @@ data = pd.DataFrame(data,index=data_zscore.index)
 for i in range(k):
     d = data[cluster_result[u'聚类类别'] == i]
     plt.plot(d[0], d[1], '.')
-
-
-
-
-
 
 
