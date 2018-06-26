@@ -75,7 +75,7 @@ X[0]
 #特征矩阵处理基本完成,接下来要将对应的标签y进行转换，使其成为列向量
 y = y[:, np.newaxis]
 
-#对标签也用OneHotEncoder转换？？？
+#对标签也用OneHotEncoder转换（多元决策）
 onehotencoder = OneHotEncoder()
 y = onehotencoder.fit_transform(y).toarray()
 
@@ -95,3 +95,62 @@ X_test = sc.transform(X_test)
 即我们已经找到了转换规则，我们把这个规则利用在训练集上，同样，我们可以直接将其运用到测试集上
 （甚至交叉验证集），所以在测试集上的处理，我们只需要标准化数据而不需要再次拟合数据
 '''
+
+#引入决策树模型
+from sklearn import tree
+clf = tree.DecisionTreeClassifier()
+clf = clf.fit(X_train, y_train)
+
+y_pred = clf.predict(X_test)
+
+
+from sklearn.metrics import classification_report #调用classification_report模块，用以生成分析报告
+print(classification_report(y_test, y_pred))
+
+'''
+precision:准确率（所有"正确被检索的item"占所有"实际被检索到的item"的比例）
+recall:召回率（"正确被检索的item"占所有"应该检索到的item"的比例）
+f1-score:衡量二分类模型精确度的一种指标，可以看作是模型准确率和召回率的一种加权平均
+'''
+
+#深度学习-神经网络算法
+#许多时候模型过于简单带来的问题，可以通过加深隐藏层次、增加神经元的方法提升模型复杂度，加以改进
+import tflearn
+
+net = tflearn.input_data(shape=[None, 11]) 
+#11是特征矩阵的列数，原本有10列，但Geography分为了两列
+#shape的第一项，指的是我们要输入的特征矩阵行数，None可以让机器自动处理
+
+#搭建3层隐藏层，每一层设置了6个神经元，激活函数为relu
+net = tflearn.fully_connected(net, 6, activation='relu')
+net = tflearn.fully_connected(net, 6, activation='relu')
+net = tflearn.fully_connected(net, 6, activation='relu')
+
+#搭建输出层，用两个神经元做输出，并且使用回归方法，输出层选用的激活函数为softmax。处理分类任务的时候，softmax比较合适
+net = tflearn.fully_connected(net, 2, activation='softmax')
+net = tflearn.regression(net)
+
+#生成模型
+model = tflearn.DNN(net)
+
+#tflearn可视化结果
+'''
+打开终端，输入
+tensorboard --logdir=/tmp/tflearn_logs/
+然后在浏览器里输入http://localhost:6006/
+'''
+
+#训练模型
+model.fit(X_train, y_train, n_epoch=30, batch_size=32, show_metric=True)
+'''
+    n_epoch：数据训练几个轮次。
+    batch_size：每一次输入给模型的数据行数。
+    show_metric：训练过程中要不要打印结果。
+'''
+
+#预测测试集的流失情况
+y_pred = model.predict(X_test)
+
+score = model.evaluate(X_test, y_test)
+
+print('测试集准确率: %0.4f%%' % (score[0] * 100))
