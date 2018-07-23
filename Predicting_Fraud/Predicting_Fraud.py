@@ -2,6 +2,9 @@
 """
 Created on Sun Jul 22 10:48:04 2018
 @author: woinews
+金融交易服务欺诈行为预测，数据量为636万，而欺诈行为占比很低，正负样本极度不平衡，故采取了xgboost进行分类预测，观察AUPRC曲线覆盖面积对模型进行评价。
+数据集链接：https://www.kaggle.com/ntnu-testimon/paysim1/downloads/PS_20174392719_1491204439457_log.csv/2
+
 """
 
 import pandas as pd
