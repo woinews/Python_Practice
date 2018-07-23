@@ -311,3 +311,25 @@ colours = plt.cm.Set1(np.linspace(0, 1, 9))
 ax = plot_importance(clf, height = 1, color = colours, grid = False, 
                      show_values = False, importance_type = 'cover', ax = ax)
 plt.show()
+
+
+#定义一个用于绘制混淆矩阵图的函数
+def cm_plot(y, yp):
+  from sklearn.metrics import confusion_matrix #导入混淆矩阵函数  
+  cm = confusion_matrix(y, yp) #混淆矩阵 
+  plt.matshow(cm, cmap=plt.cm.Greens) #画混淆矩阵图，配色风格使用cm.Greens
+  plt.colorbar() #颜色标签  
+  
+  for x in range(len(cm)): #数据标签  
+    for y in range(len(cm)):
+      plt.annotate(cm[x,y], xy=(x, y), horizontalalignment='center', verticalalignment='center')
+  
+  plt.ylabel('True label') #坐标轴标签 
+  plt.xlabel('Predicted label') #坐标轴标签
+  return plt
+
+cm_plot(testY, clf.predict(testX)).show()
+
+from sklearn.metrics import accuracy_score #用于输出混淆矩阵中分类正确的事件比例
+score = accuracy_score(testY,clf.predict(testX))
+print("模型准确率: %.2f%%" % (score*100))
