@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jul 22 10:48:04 2018
-
 @author: woinews
 """
 
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv(r'D:\DataAnalysis\Kaggle\Synthetic_Financial_Datasets\PS_20174392719_1491204439457_log.csv')
+df = pd.read_csv(r'D:\datasheet\PS_20174392719_1491204439457_log.csv')
 
 df = df.rename(columns={'oldbalanceOrg':'oldBalanceOrig', 'newbalanceOrig':'newBalanceOrig','oldbalanceDest':'oldBalanceDest', 'newbalanceDest':'newBalanceDest'})
 pd.set_option('display.max_columns',20)  #避免输出时省略了中间的字段，可以将展示的列数设置在0-20
@@ -31,7 +30,7 @@ print(df.loc[df.isFraud == 1].groupby('type')['type'].count())
 
 '''
 对所有特征进行筛选
-step:在现实世界中映射的时间单位，无特殊意义舍去【后续有步骤证明】
+step:在现实世界中映射的时间单位，保留
 type:只有其中的TRANSFER和CASH_OUT会出现诈骗行为,故只选择这两种type的数据进行建模
 amount：本币交易金额，保留
 nameOrig：开始交易的客户，名字应该没有特殊含义，舍去
@@ -238,23 +237,23 @@ plt.legend(handles = [noFraudMarker, fraudMarker], \
 
 
 #使用热力图对每个特征之间的相关关系进行考察
-Xfraud = X.loc[Y == 1] # update Xfraud & XnonFraud with cleaned data
+Xfraud = X.loc[Y == 1] 
 XnonFraud = X.loc[Y == 0]
                   
-correlationNonFraud = XnonFraud.loc[:, X.columns != 'step'].corr()
-mask = np.zeros_like(correlationNonFraud)
-indices = np.triu_indices_from(correlationNonFraud)
-mask[indices] = True
+correlationNonFraud = XnonFraud.loc[:, X.columns != 'step'].corr() 
+#去除step后对各特征值的相关性进行考察,返回一个9X9的矩阵
+mask = np.zeros_like(correlationNonFraud)   #返回一个9X9的全0矩阵
+indices = np.triu_indices_from(correlationNonFraud)  #返回一个9X9的上三角矩阵（主对角线以上）
+mask[indices] = True  #将9X9的上三角矩阵的值都设置为1
 
 grid_kws = {"width_ratios": (.9, .9, .05), "wspace": 0.2}
-f, (ax1, ax2, cbar_ax) = plt.subplots(1, 3, gridspec_kw=grid_kws, \
-                                     figsize = (14, 9))
+f, (ax1, ax2, cbar_ax) = plt.subplots(1, 3, gridspec_kw=grid_kws, figsize = (14, 9))
 
 cmap = sns.diverging_palette(220, 8, as_cmap=True)
 ax1 =sns.heatmap(correlationNonFraud, ax = ax1, vmin = -1, vmax = 1, \
     cmap = cmap, square = False, linewidths = 0.5, mask = mask, cbar = False)
-ax1.set_xticklabels(ax1.get_xticklabels(), size = 16); 
-ax1.set_yticklabels(ax1.get_yticklabels(), size = 16); 
+ax1.set_xticklabels(ax1.get_xticklabels(), size = 16)
+ax1.set_yticklabels(ax1.get_yticklabels(), size = 16)
 ax1.set_title('Genuine \n transactions', size = 20)
 
 correlationFraud = Xfraud.loc[:, X.columns != 'step'].corr()
@@ -262,11 +261,14 @@ ax2 = sns.heatmap(correlationFraud, vmin = -1, vmax = 1, cmap = cmap, \
  ax = ax2, square = False, linewidths = 0.5, mask = mask, yticklabels = False, \
     cbar_ax = cbar_ax, cbar_kws={'orientation': 'vertical', \
                                  'ticks': [-1, -0.5, 0, 0.5, 1]})
-ax2.set_xticklabels(ax2.get_xticklabels(), size = 16); 
-ax2.set_title('Fraudulent \n transactions', size = 20);
+ax2.set_xticklabels(ax2.get_xticklabels(), size = 16)
+ax2.set_title('Fraudulent \n transactions', size = 20)
 
 cbar_ax.set_yticklabels(cbar_ax.get_yticklabels(), size = 14)
-
+'''
+正常的交易行为，amount与errorBalanceOrig有很强的相关性，而欺诈行为中，amount与errorBalanceOrig的相关性
+很弱，而与oldBalanceOrig的相关性很强，因此errorBalanceOrig特征的设定可以很好地用于区分正常交易与欺诈行为
+'''
 
 
 print('skew = {}'.format( len(Xfraud) / float(len(X)) ))
@@ -277,19 +279,31 @@ PR曲线在正负样本比例悬殊较大时更能反映分类的性能
 '''
 
 
-from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import average_precision_score
 from xgboost.sklearn import XGBClassifier
-from xgboost import plot_importance, to_graphviz
+from xgboost import plot_importance
 
+#区分测试集和训练集，使用XGBClassifier对数据进行分类并计算AUPRC
+#对于XGBoost的使用查看连接 https://blog.csdn.net/qunnie_yi/article/details/80129857
+X = X.drop(['isFraud'], axis = 1)
 
 trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.2, 
                                                 random_state = randomState)
 
 # Long computation in this cell (~1.8 minutes)
-weights = (Y == 0).sum() / (1.0 * (Y == 1).sum())
-clf = XGBClassifier(max_depth = 3, scale_pos_weight = weights, \
-                n_jobs = 4)
+weights = (Y == 0).sum() / (1.0 * (Y == 1).sum())  #计算权重
+clf = XGBClassifier(max_depth = 3, scale_pos_weight = weights, n_jobs = 4)
 probabilities = clf.fit(trainX, trainY).predict_proba(testX)
-print('AUPRC = {}'.format(average_precision_score(testY, \
-                                              probabilities[:, 1])))
+print('AUPRC = {}'.format(average_precision_score(testY, probabilities[:, 1])))
+
+#输出该训练模型的重要特征值（从高到低排序）
+
+fig = plt.figure(figsize = (14, 9))
+ax = fig.add_subplot(111)
+
+colours = plt.cm.Set1(np.linspace(0, 1, 9))
+#plot_importance(clf)
+ax = plot_importance(clf, height = 1, color = colours, grid = False, 
+                     show_values = False, importance_type = 'cover', ax = ax)
+plt.show()
